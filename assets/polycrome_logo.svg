@@ -1,0 +1,18 @@
+
+<svg width="400" height="120" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .brand { font: bold 36px 'Arial'; fill: #1c2c89; }
+    .tagline { font: italic 18px 'Times New Roman'; fill: #000000; }
+    .lightning { fill: red; }
+  </style>
+
+  <!-- Lightning bolts -->
+  <polygon points="20,20 30,20 25,40 35,40 25,60 30,45 20,45" class="lightning"/>
+  <polygon points="40,20 50,20 45,40 55,40 45,60 50,45 40,45" class="lightning"/>
+
+  <!-- Brand Name -->
+  <text x="70" y="50" class="brand">Polycrome</text>
+
+  <!-- Tagline -->
+  <text x="72" y="85" class="tagline">Light the future</text>
+</svg>
