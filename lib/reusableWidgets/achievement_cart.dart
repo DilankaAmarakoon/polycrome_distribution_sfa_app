@@ -4,43 +4,60 @@ import 'package:polycrome_sales_application/reusableWidgets/showDialog.dart';
 import 'package:provider/provider.dart';
 import '../constants/colors.dart';
 import '../localDb/app_database.dart';
-import '../providers/order_return_provider.dart';
+import '../providers/order_return_payment_provider.dart';
 
-class OrderCart extends StatelessWidget {
-  final List<dynamic> orderValidData;
+class AchivementCard extends StatelessWidget {
+  final String orderOrReturn;
+  final List<dynamic> orderReturnValidData;
   final int index;
   final int liternary_Id;
 
-  const OrderCart({
+  const AchivementCard({
     super.key,
-    required this.orderValidData,
+    required this.orderOrReturn,
+    required this.orderReturnValidData,
     required this.index,
     required this.liternary_Id,
   });
 
   @override
   Widget build(BuildContext context) {
-    final orderReturnProviderData = Provider.of<OrderReturnProvider>(context);
+    print("cbbnn........${orderReturnValidData}");
+    final orderReturnProviderData = Provider.of<OrderReturnPaymentProvider>(context);
     final dataBase = AppDatabase.instance;
     final numberFormatter = NumberFormat('#,##0.00');
     return Dismissible(
+      direction: orderOrReturn == "Order" && (orderReturnValidData[index]["isFreeProduct"] || orderReturnValidData[index]["is_discount_product"]) ?  DismissDirection.none :DismissDirection.endToStart ,
       key: UniqueKey(),
-      direction: DismissDirection.endToStart,
+      // direction: DismissDirection.endToStart,
       confirmDismiss: (direction) async {
-        final confirmed = await showDeleteConfirmationDialog(
+        final confirmed = await showConfirmationDialog(
           context,
           "Are you sure you want to delete this product?",
+          actionType: 'delete',
         );
-
-        if (confirmed == true) {
-          await dataBase.deleteOrderProductUsageByLineAndProduct(
-            itineraryLineId: liternary_Id,
-            productId: orderValidData[index]["id"],
-          );
-          orderReturnProviderData.fetchOrderProductValidData(liternary_Id);
+        if (confirmed == true){
+          if(orderOrReturn == "Order"){
+            await dataBase.deleteOrderProductUsageByLineAndProduct(
+              itineraryLineId: liternary_Id,
+              productId: orderReturnValidData[index]["id"],
+            );
+            AppDatabase.instance.deleteDiscountOrderProductUsage(liternary_Id);
+            orderReturnProviderData.fetchOrderProductValidData(liternary_Id);
+          }else{
+            bool deleted  = await dataBase.deleteReturnProductUsageByLineAndProduct(
+              itineraryLineId: liternary_Id,
+              productId: orderReturnValidData[index]["id"],
+            );
+            if (deleted) {
+              print("Delete successful.");
+            } else {
+              print("No record found to delete.");
+            }
+            orderReturnProviderData.fetchReturnProductValidData(liternary_Id);
+          }
           return true;
         }
-
         return false;
       },
       background: Container(
@@ -52,7 +69,7 @@ class OrderCart extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.07,
+          constraints: BoxConstraints(minHeight: 50),
           width: double.infinity,
           decoration: BoxDecoration(
             color: Colors.white,
@@ -75,7 +92,7 @@ class OrderCart extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        orderValidData[index]["display_name"],
+                        orderReturnValidData[index]["display_name"],
                         maxLines: 2,
                         style: TextStyle(
                           color: kCartColor,
@@ -85,7 +102,7 @@ class OrderCart extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        "Quantity : ${orderValidData[index]["adQty"]}",
+                        "Quantity : ${orderReturnValidData[index]["adQty"]}",
                         style: TextStyle(
                           color: kCartColor,
                           fontSize: 12,
@@ -95,14 +112,14 @@ class OrderCart extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "Unit Price Rs : ${numberFormatter.format(orderValidData[index]["salePrice"])}",
+                            "Unit Price Rs : ${numberFormatter.format(orderReturnValidData[index]["salePrice"])}",
                             style: TextStyle(
                               color: kCartColor,
                               fontSize: 12,
                             ),
                           ),
                           Text(
-                            "Total Rs : ${numberFormatter.format(orderValidData[index]["salePrice"]*orderValidData[index]["adQty"])}",
+                            "Total Rs : ${numberFormatter.format(orderReturnValidData[index]["salePrice"]*orderReturnValidData[index]["adQty"])}",
                             style: TextStyle(
                               color: kCartColor,
                               fontSize: 12,
