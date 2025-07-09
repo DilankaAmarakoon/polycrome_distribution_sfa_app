@@ -1,28 +1,24 @@
-// class ConnectionHandlle Chan
-//
-//
-//
-//
-//
-//
-//
-//
-// Future<void> checkConnectionAndDoTask() async {
-//   final connectivityResult = await Connectivity().checkConnectivity();
-//
-//   // Step 1: Check if there is any network (WiFi or Mobile)
-//   if (connectivityResult != ConnectivityResult.none) {
-//     // Step 2: Check if actual internet is available
-//     bool isConnected = await InternetConnectionChecker().hasConnection;
-//
-//     if (isConnected) {
-//       // ✅ Internet is available, do your task
-//       print('Internet is available');
-//       await yourSyncOrNetworkTask();
-//     } else {
-//       print('Connected to a network, but no internet access.');
-//     }
-//   } else {
-//     print('No network connection.');
-//   }
-// }
+import 'package:connectivity_plus/connectivity_plus.dart' show Connectivity, ConnectivityResult;
+import 'package:flutter/cupertino.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+
+class ConnectionHandle with ChangeNotifier {
+  Future<bool> checkConnection() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+
+    if (connectivityResult != ConnectivityResult.none) {
+      bool isConnected = await InternetConnectionChecker.instance.hasConnection;
+
+      if (isConnected) {
+        print('Internet is available');
+        return true;
+      } else {
+        print('No actual internet access.');
+        return false;
+      }
+    } else {
+      print('No network at all.');
+      return false;
+    }
+  }
+}

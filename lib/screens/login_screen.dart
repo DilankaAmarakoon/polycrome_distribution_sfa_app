@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
           primaryColor: kMainColor,
           accentColor: kBgColor,
           cardTheme: CardTheme(
-            color: kCartColor,
+            color: Colors.grey,
             elevation: 5,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -59,18 +59,18 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           inputTheme: InputDecorationTheme(
-            labelStyle: TextStyle(color: kBgColor),
+            labelStyle: TextStyle(color: Colors.black),
             hintStyle: TextStyle(color: kBgColor),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: kMainColor),
               borderRadius: BorderRadius.circular(10),
             ),
             focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: kBgColor, width: 2.0),
+              borderSide: BorderSide(color: Colors.black, width: 2.0),
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          textFieldStyle: TextStyle(color: kBgColor),
+          footerTextStyle: TextStyle(color: Colors.white),
           titleStyle: TextStyle(color: kBgColor, fontSize: 24),
           bodyStyle: TextStyle(color: kBgColor),
           cardInitialHeight: 360,
@@ -100,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
           isLoginSuccess = false;
 
           int userIds = await checkUserLogin(
-            "Jayaseelan","123"
+            "Jayaseelan", "123"
             // loginData.name,
             // loginData.password,
           );
@@ -113,12 +113,13 @@ class _LoginScreenState extends State<LoginScreen> {
             return Future.value("Invalid Email or password");
           }
         },
-        onSubmitAnimationCompleted: () {
+        onSubmitAnimationCompleted: () async{
           if (isLoginSuccess) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => HomeScreen()),
             );
+            setState(() {});
           }
         },
         onRecoverPassword: (name) {
@@ -135,6 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
       )
   async {
     SharedPreferences pref = await SharedPreferences.getInstance();
+    print("eeerrrrd");
     try {
       final userId = await xml_rpc.call(
         Uri.parse(
@@ -143,14 +145,17 @@ class _LoginScreenState extends State<LoginScreen> {
         'login',
         [dbName, userName, password],
       );
+      print("useropp.$userId");
       if (userId != false) {
         pref.setInt("user_Id", userId);
         pref.setString("password", password);
+        print("wwerr.${userId}");
         return userId;
       }else{
         return -1;
       }
     } catch (e) {
+      print("eeeeeooo..$e");
       return -1; // exception
     }
   }

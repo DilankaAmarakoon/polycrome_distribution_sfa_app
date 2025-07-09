@@ -1,17 +1,17 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../constants/colors.dart';
+import 'package:intl/intl.dart';
 import '../localDb/app_database.dart';
-import '../providers/order_return_provider.dart';
 class ProductCart extends StatefulWidget {
+  final String orderOrReturn;
   final List productList;
   final int index;
   final int liternary_Id;
 
   const ProductCart({
     super.key,
+    required this.orderOrReturn,
     required this.productList,
     required this.index,
     required this.liternary_Id,
@@ -20,17 +20,21 @@ class ProductCart extends StatefulWidget {
   @override
   State<ProductCart> createState() => _ProductCartState();
 }
-
 class _ProductCartState extends State<ProductCart> {
   final AppDatabase dataBase = AppDatabase.instance;
   late TextEditingController qty = TextEditingController();
-  @override
-  void initState() {
-    qty.text = widget.productList[widget.index]["adQty"].toString();
-    super.initState();
-  }
+  bool isAddedQty = false;
+  final numberFormatter = NumberFormat('#,##0.00');
+  bool checkUpdate = false;
   @override
   Widget build(BuildContext context) {
+    checkUpdate = widget.productList[widget.index]["adQty"] >0 ? true :false;
+    qty.text = widget.productList[widget.index]["adQty"].toString();
+    if(widget.productList[widget.index]["adQty"] > 0){
+      isAddedQty = true;
+    }else{
+      isAddedQty = false;
+    }
     final product = widget.productList[widget.index];
     String? base64String = product["imager"];
     Uint8List? imageByte;
@@ -52,8 +56,8 @@ class _ProductCartState extends State<ProductCart> {
         height: MediaQuery.of(context).size.height * 0.15,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
+          color: isAddedQty ? Theme.of(context).primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(2),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -66,113 +70,136 @@ class _ProductCartState extends State<ProductCart> {
           padding: const EdgeInsets.all(8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      product["productName"] ?? "Unnamed Product",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                child: SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        product["displayName"],
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isAddedQty ? Colors.white : Colors.black,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(product["itemCode"] ?? "No Code"),
-                    Text("Rs : ${product["salePrice"] ?? 0.0}"),
-                    Container(
-                      width: 120,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(0),
+                      Text("Unit Price Rs : ${numberFormatter.format(product["salePrice"] ?? 0.0)}",
+                        style: TextStyle(
+                          color: isAddedQty ? Colors.white : Colors.black,
+                        ),
                       ),
-                      child: Row(
-                        children: [
-                          InkWell(
-                            onTap: () async{
-                              setState(() {
-                                int currentQty = qty.text == "" ? 0 : int.parse(qty.text);
-                                if (currentQty > 0) {
-                                  currentQty--;
-                                }
-                                qty.text = currentQty.toString();
-                              });
-                              addProductUsageTableToData(productId:product["id"],qty:int.parse(qty.text),liternary_Id:widget.liternary_Id);
-                            },
-                            child: Container(
-                              width: 30,
-                              height: double.infinity,
-                              decoration: BoxDecoration(
-                                color: kMainColor,
-                                border: Border(
-                                  right: BorderSide(color: Colors.grey),
-                                ),
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(0),
-                                  bottomLeft: Radius.circular(0),
-                                ),
-                              ),
-                              child: const Icon(Icons.remove, size: 20),
-                            ),
-                          ),
-
-                          // Quantity input field, no border, centered text
-                          Expanded(
-                            child: TextFormField(
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              controller: qty,
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(vertical: 8),
-                                isDense: true,
-                              ),
-                              onChanged: (value) async{
-                                final parsed = int.tryParse(value);
-                                if (parsed != null && parsed >= 0) {
-                                  setState(() {
-                                    qty.text = parsed.toString();
-                                  });
-                                  addProductUsageTableToData(productId:product["id"],qty:int.parse(qty.text),liternary_Id:widget.liternary_Id);
-                                }
+                      Container(
+                        width: 150,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          border: Border.all(color:isAddedQty ? Colors.white :  Theme.of(context).primaryColor),
+                          borderRadius: BorderRadius.circular(0),
+                        ),
+                        child: Row(
+                          children: [
+                            InkWell(
+                              onTap: () async{
+                                setState(() {
+                                  int currentQty = qty.text == "" ? 0 : int.parse(qty.text);
+                                  if (currentQty > 0) {
+                                    currentQty--;
+                                  }
+                                  widget.productList[widget.index]["adQty"] = currentQty;
+                                  whenAddQtyChangeColor(currentQty);
+                                  qty.text = currentQty.toString();
+                                });
+                                addProductUsageTableToData(productId:product["id"],qty:int.parse(qty.text),liternary_Id:widget.liternary_Id,);
                               },
-                            ),
-                          ),
-
-                          // Plus button with border on left side only
-                          InkWell(
-                            onTap: () async{
-                              setState(() {
-                                int currentQty = qty.text == "" ? 0 : int.parse(qty.text);
-                                currentQty++;
-                                qty.text = currentQty.toString();
-                              });
-                              addProductUsageTableToData(productId:product["id"],qty:int.parse(qty.text),liternary_Id:widget.liternary_Id);
-                            },
-                            child: Container(
-                              width: 30,
-                              height: double.infinity,
-                              decoration: BoxDecoration(
-                                color: kMainColor,
-                                border: Border(
-                                  left: BorderSide(color: Colors.grey),
+                              child: Container(
+                                width: 30,
+                                height: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: isAddedQty ?  Colors.white : Theme.of(context).primaryColor,
+                                  border: Border(
+                                    right: BorderSide(color:isAddedQty ? Colors.white :  Theme.of(context).primaryColor),
+                                  ),
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(0),
+                                    bottomLeft: Radius.circular(0),
+                                  ),
                                 ),
-                                borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(0),
-                                  bottomRight: Radius.circular(0),
+                                child:  Icon(Icons.remove, size: 20,
+                                  color: isAddedQty ?  Theme.of(context).primaryColor :Colors.white,
                                 ),
                               ),
-                              child: const Icon(Icons.add, size: 20),
                             ),
-                          ),
-                        ],
-                      ),
-                    )
-                  ],
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                cursorHeight: 20.0,
+                                controller: qty,
+                                style:  TextStyle(
+                                  color: isAddedQty ?  Colors.white : Theme.of(context).primaryColor,
+                                  fontSize: 20
+                                ),
+                                cursorColor: isAddedQty ?  Colors.white : Theme.of(context).primaryColor,
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                                  isDense: true,
+                                ),
+                                onChanged: (value) async{
+                                 value = value == "" ? 0.toString() : value;
+                                  final parsed = int.tryParse(value);
+                                  // if (parsed != null && parsed >= 0) {
+                                  //   setState(() {
+                                  //     // qty.text = parsed.toString();/
+                                  //   });
+                                  // }
+                                  addProductUsageTableToData(productId:product["id"],qty:qty.text == "" ? 0 :int.parse(qty.text),liternary_Id:widget.liternary_Id,);
+
+                                  whenAddQtyChangeColor(parsed!);
+                                },
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () async{
+                                setState(() {
+                                  int currentQty = qty.text == "" ? 0 : int.parse(qty.text);
+                                  currentQty++;
+                                  qty.text = currentQty.toString();
+                                  widget.productList[widget.index]["adQty"] = currentQty;
+                                  whenAddQtyChangeColor(currentQty);
+                                });
+                                addProductUsageTableToData(productId:product["id"],qty:int.parse(qty.text),liternary_Id:widget.liternary_Id,);
+                              },
+                              child: Container(
+                                width: 30,
+                                height: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: isAddedQty ?  Colors.white : Theme.of(context).primaryColor,
+                                  border: Border(
+                                    left: BorderSide(color:isAddedQty ? Colors.white :  Theme.of(context).primaryColor),
+                                  ),
+                                  borderRadius: const BorderRadius.only(
+                                    topRight: Radius.circular(0),
+                                    bottomRight: Radius.circular(0),
+                                  ),
+                                ),
+                                child:  Icon(Icons.add, size: 20,
+                                  color: isAddedQty ?  Theme.of(context).primaryColor :Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               ), // Add some spacing between text and image
               imageByte != null
@@ -188,8 +215,8 @@ class _ProductCartState extends State<ProductCart> {
                     ),
                   )
                   : const SizedBox(
-                    width: 50,
-                    height: 50,
+                    width: 100,
+                    height: 100,
                     child: Icon(Icons.broken_image, color: Colors.grey),
                   ),
             ],
@@ -201,11 +228,33 @@ class _ProductCartState extends State<ProductCart> {
 
 
   addProductUsageTableToData({required productId, required int qty, required int liternary_Id})async {
-    print("mkol.${productId}");
-    await dataBase.addOrUpdateOrRemoveProductUsage(
-        itineraryLineId: liternary_Id,
-        productId: productId,
-        adQty: qty
-    );
+    // print("mkol.qty${updateCurrentQty["adQty"]}");
+    if(widget.orderOrReturn == "Order"){
+      int? usageId = await dataBase.addOrUpdateOrRemoveOrderProductUsage(
+          itineraryLineId: liternary_Id,
+          productId: productId,
+          adQty: qty
+      );
+      if(usageId != null && checkUpdate){
+        await dataBase.updateFalseIsSyncedOrderProductUsage(id: usageId);
+      }
+    }else{
+      int? usageId = await dataBase.addOrUpdateOrRemoveReturnProductUsage(
+          itineraryLineId: liternary_Id,
+          productId: productId,
+          returnQty: qty
+      );
+      if(usageId != null && checkUpdate){
+        await dataBase.updateFalseIsSyncedReturnProductUsage(id: usageId);
+      }
+    }
+  }
+  whenAddQtyChangeColor(int qty){
+    print("qtyqty.$qty");
+    if(qty>0){
+      isAddedQty = true;
+    }else{
+      isAddedQty = false;
+    }
   }
 }
