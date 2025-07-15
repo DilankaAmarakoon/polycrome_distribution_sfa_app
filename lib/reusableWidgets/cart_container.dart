@@ -1,153 +1,107 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import '../constants/colors.dart';
-import '../localDb/app_database.dart';
 
-class CartContainer extends StatefulWidget {
+class CartContainer extends StatelessWidget {
   final String partnerName;
   final String routeName;
-  final String date;
+  final bool isVisited;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   const CartContainer({
     super.key,
     required this.partnerName,
     required this.routeName,
-    required this.date,
+    required this.isVisited,
     required this.onTap,
+    required this.onLongPress,
   });
 
   @override
-  State<CartContainer> createState() => _CartContainerState();
-}
-
-class _CartContainerState extends State<CartContainer> {
-  final db = SalesPersonDataOperations();
-  Stream<Position>? _positionStream;
-
-  @override
-  void dispose() {
-    // Cancel any stream or background listeners if needed
-    super.dispose();
-  }
-
-  Future<void> _onTap() async {
-    await _getLiveLocation();
-    await _syncPendingOrders();
-  }
-
-  Future<void> _getLiveLocation() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        print("Location permission denied");
-        return;
-      }
-    }
-
-    final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-
-    print("Latitude: ${position.latitude}, Longitude: ${position.longitude}");
-
-    // TODO: Store or send this to backend
-  }
-
-  Future<void> _syncPendingOrders() async {
-    // Uncomment and implement your syncing logic here
-    /*
-    final orders = await db.getUnsyncedOrders();
-    for (var order in orders) {
-      final success = await sendOrderToApi(order);
-      if (success) {
-        await db.markOrderAsSynced(order.id);
-        print("Order ID ${order.id} synced.");
-      }
-    }
-    */
-    print("Sync logic executed.");
-  }
-
-  @override
   Widget build(BuildContext context) {
+    Color borderColor = isVisited ? Colors.green : Colors.grey.shade300;
+    Color statusColor = isVisited ? Colors.green.shade100 : Colors.orange.shade100;
+    String statusLabel = isVisited ? "Visited" : "Pending";
+
     return GestureDetector(
-      onTap: widget.onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.06,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
-            child: Row(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        constraints: BoxConstraints(minHeight: 60),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// Title row with status badge
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        widget.partnerName,
-                        style: TextStyle(
-                          color: kCartColor,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.routeName,
-                        style: TextStyle(
-                          color: kCartColor.withOpacity(0.8),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                Expanded(
+                  child: Text(
+                    partnerName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: kCartColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Row(
-                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      widget.date,
-                      style: TextStyle(
-                        color: kCartColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: TextStyle(
+                      color: borderColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        "✅",
-                        style: TextStyle(
-                          color: kCartColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 4),
+
+            /// Route Row
+            Row(
+              children: [
+                Icon(Icons.route, size: 14, color: Colors.grey),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    routeName,
+                    style: TextStyle(color: Colors.black87, fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 6),
+
+            /// Tap instruction
+            Text(
+              "Tap to visit • Long press to mark as visited",
+              style: TextStyle(fontSize: 11.5, color: Colors.grey[600]),
+            ),
+          ],
         ),
       ),
     );

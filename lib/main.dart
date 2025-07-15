@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:polycrome_sales_application/providers/connection_handle.provider.dart';
 import 'package:polycrome_sales_application/providers/handdle_data_provider.dart';
-import 'package:polycrome_sales_application/providers/order_return_provider.dart';
+import 'package:polycrome_sales_application/providers/order_return_payment_provider.dart';
+import 'package:polycrome_sales_application/providers/product_data.provider.dart';
+import 'package:polycrome_sales_application/providers/save_data_provider.dart';
 import 'package:polycrome_sales_application/screens/home_screen.dart';
 import 'package:polycrome_sales_application/screens/login_screen.dart';
 import 'package:provider/provider.dart';
@@ -9,14 +12,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'constants/colors.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     MultiProvider(
       providers: [
-        Provider<ItineraryDataHandle>(
+        ChangeNotifierProvider<ItineraryDataHandle>(
           create: (_) => ItineraryDataHandle(),
         ),
-        ChangeNotifierProvider<OrderReturnProvider>(   // use ChangeNotifierProvider here if your provider extends ChangeNotifier
-          create: (_) => OrderReturnProvider(),
+        ChangeNotifierProvider<OrderReturnPaymentProvider>(
+          create: (_) => OrderReturnPaymentProvider(),
+        ), ChangeNotifierProvider<ProductDataProvider>(
+          create: (_) => ProductDataProvider(),
+        ), ChangeNotifierProvider<SaveDataProvider>(
+          create: (_) => SaveDataProvider(),
+        ),ChangeNotifierProvider<ConnectionHandle>(
+          create: (_) => ConnectionHandle(),
         ),
       ],
       child: MyApp(),
@@ -49,22 +59,21 @@ class _MyAppState extends State<MyApp> {
     colorScheme: ColorScheme.fromSeed(
     seedColor: kMainColor,
     ),
+        
     ),
       home: isLoggedIn ? HomeScreen() : LoginScreen()
     );
   }
 
-  void _checkUserAlreadyLoggedOrNot() async {
+  Future<void> _checkUserAlreadyLoggedOrNot() async {
     SharedPreferences pref = await SharedPreferences.getInstance();
     int? id = pref.getInt("user_Id");
-    if (id != null && id > 0) {
-      setState(() {
-        isLoggedIn = true;
-      });
-    } else {
-      setState(() {
-        isLoggedIn = false;
-      });
-    }
+    await Future.delayed(Duration(milliseconds: 300));
+
+    if (!mounted) return;
+    setState(() {
+      isLoggedIn = id != null && id > 0;
+    });
   }
+
 }
