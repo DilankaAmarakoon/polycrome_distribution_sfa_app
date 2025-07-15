@@ -227,7 +227,7 @@ class _ProductCartState extends State<ProductCart> {
   }
 
 
-  addProductUsageTableToData({required productId, required int qty, required int liternary_Id})async {
+  addProductUsageTableToData({required productId,  required int qty, required int liternary_Id})async {
     // print("mkol.qty${updateCurrentQty["adQty"]}");
     if(widget.orderOrReturn == "Order"){
       int? usageId = await dataBase.addOrUpdateOrRemoveOrderProductUsage(
@@ -239,7 +239,7 @@ class _ProductCartState extends State<ProductCart> {
         await dataBase.updateFalseIsSyncedOrderProductUsage(id: usageId);
       }
     }else{
-      int? usageId = await dataBase.addOrUpdateOrRemoveReturnProductUsage(
+      int? usageId = await dataBase.addOrUpdateOrRemoveReturnProductUsageForInvoiceItems(
           itineraryLineId: liternary_Id,
           productId: productId,
           returnQty: qty
@@ -250,7 +250,6 @@ class _ProductCartState extends State<ProductCart> {
     }
   }
   whenAddQtyChangeColor(int qty){
-    print("qtyqty.$qty");
     if(qty>0){
       isAddedQty = true;
     }else{

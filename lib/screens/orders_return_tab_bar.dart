@@ -1,14 +1,12 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:polycrome_sales_application/reusableWidgets/drop_down.dart';
+import 'package:polycrome_sales_application/widgets/return_remark_popup.dart';
 import 'package:provider/provider.dart';
 import '../localDb/app_database.dart';
 import '../providers/order_return_payment_provider.dart';
 import '../reusableWidgets/achievement_cart.dart';
 import '../reusableWidgets/order_return_cart.dart';
-import '../reusableWidgets/showDialog.dart';
 import '../widgets/product_dragable_sheet.dart';
 
 class OrdersReturnTabBarDetails extends StatefulWidget {
@@ -24,14 +22,12 @@ class _OrdersReturnTabBarDetailsState extends State<OrdersReturnTabBarDetails> {
   final numberFormatter = NumberFormat('#,##0.00');
   double totalAmount = 0.0;
   List<Map<String, dynamic>> discountDetails = [];
-  List<Map<String, dynamic>> invoiceList = [];
   @override
   void initState() {
     if(widget.orderOrReturn == "Order"){
       Provider.of<OrderReturnPaymentProvider>(context, listen: false).fetchOrderProductValidData(widget.liternary_Id,context,false);
     }else{
       Provider.of<OrderReturnPaymentProvider>(context, listen: false).fetchReturnProductValidData(widget.liternary_Id);
-      invoiceList = Provider.of<OrderReturnPaymentProvider>(context, listen: false).showPaymentInvoicesDropData;
     }
     super.initState();
   }
@@ -52,10 +48,13 @@ class _OrdersReturnTabBarDetailsState extends State<OrdersReturnTabBarDetails> {
                 width:double.infinity,
                 height: 40,
                 child: StyledDropdown(
-                    dataList:invoiceList,
+                    dataList:showOrderReturnProductValidData.showReturnInvoicesDropData,
                     hintText: "Invoices",
-                    onChange: (value){
-                  }),
+                    onChange: (value)async{
+                      if(value != null) await showOrderReturnProductValidData.fetchReturnInvoicesLines(value["id"],widget.liternary_Id,value["name"]);
+                      Provider.of<OrderReturnPaymentProvider>(context, listen: false).fetchReturnProductValidData(widget.liternary_Id);
+                      setState(() {});
+                    }),
               ),
               Row(
                 children: [
@@ -67,6 +66,7 @@ class _OrdersReturnTabBarDetailsState extends State<OrdersReturnTabBarDetails> {
                         onPressed: () async{
                           List<Map<String, dynamic>> list =
                           await fetchDbProductData(showOrderReturnProductValidData.showReturnProductValidData);
+                          print("2mmkkll.......${list.length}");
                           productSheet.openDraggableSheet(
                             widget.orderOrReturn,
                             context,
@@ -200,52 +200,65 @@ class _OrdersReturnTabBarDetailsState extends State<OrdersReturnTabBarDetails> {
             ],
           ),
           SizedBox(height: 5,),
-          Expanded(
-            flex: 20,
-            child: ListView.builder(
-              itemCount: widget.orderOrReturn == "Order"
-                  ? showOrderReturnProductValidData.showOrderProductValidData.length +1
-                  : showOrderReturnProductValidData.showReturnProductValidData.length ,
-              itemBuilder: (context, index) {
-                final isLast = widget.orderOrReturn == "Order"
-                    ? index == showOrderReturnProductValidData.showOrderProductValidData.length
-                    : index == showOrderReturnProductValidData.showReturnProductValidData.length;
+          Consumer<OrderReturnPaymentProvider>(
+              builder: (context, provider, _) {
+              return provider.outStandingState.isNotEmpty  &&  widget.orderOrReturn == "Order" &&  showOrderReturnProductValidData.showOrderProductValidData.isEmpty ?
+              outstandingStateError(showOrderReturnProductValidData) :Expanded(
+                flex: 20,
+                child: ListView.builder(
+                  itemCount: widget.orderOrReturn == "Order"
+                      ? showOrderReturnProductValidData.showOrderProductValidData.length +1
+                      : showOrderReturnProductValidData.showReturnProductValidData.length ,
+                  itemBuilder: (context, index) {
+                    print("44555...${showOrderReturnProductValidData.showReturnProductValidData}");
+                    final isLast = widget.orderOrReturn == "Order"
+                        ? index == showOrderReturnProductValidData.showOrderProductValidData.length
+                        : index == showOrderReturnProductValidData.showReturnProductValidData.length;
 
-                if (isLast) {
-                  return AchievementCard(list:showOrderReturnProductValidData.discountDataList);
-                }
-                return OrderReturnCart(
-                  orderOrReturn: widget.orderOrReturn,
-                  orderReturnValidData: widget.orderOrReturn == "Order"
-                      ? showOrderReturnProductValidData.showOrderProductValidData
-                      : showOrderReturnProductValidData.showReturnProductValidData,
-                  index: index,
-                  liternary_Id: widget.liternary_Id,
-                  onTap: ()async{
-                    if(showOrderReturnProductValidData.showOrderProductValidData[index]["is_discount_product"]){
-                      return;
+                    if (isLast) {
+                      return AchievementCard(list:showOrderReturnProductValidData.discountDataList);
                     }
-                    List<Map<String, dynamic>> list =
-                    widget.orderOrReturn == "Order" ?
-                    await fetchDbProductData(showOrderReturnProductValidData.showOrderProductValidData):
-                    await fetchDbProductData(showOrderReturnProductValidData.showReturnProductValidData);
-                    productSheet.openDraggableSheet(
-                      widget.orderOrReturn,
-                      context,
-                      list,
-                      widget.orderOrReturn == "Order" ? showOrderReturnProductValidData.showOrderProductValidData[index] : showOrderReturnProductValidData.showReturnProductValidData[index],
-                      widget.liternary_Id,
-                          () async{
+                    return OrderReturnCart(
+                      orderOrReturn: widget.orderOrReturn,
+                      orderReturnValidData: widget.orderOrReturn == "Order"
+                          ? showOrderReturnProductValidData.showOrderProductValidData
+                          : showOrderReturnProductValidData.showReturnProductValidData,
+                      index: index,
+                      liternary_Id: widget.liternary_Id,
+                      onTap: ()async{
+                        if(widget.orderOrReturn == "Order" && showOrderReturnProductValidData.showOrderProductValidData[index]["is_discount_product"]){
+                          return;
+                        }
+                        List<Map<String, dynamic>> list =
                         widget.orderOrReturn == "Order" ?
-                        await Provider.of<OrderReturnPaymentProvider>(context, listen: false).fetchOrderProductValidData(widget.liternary_Id,context,false):
-                        await Provider.of<OrderReturnPaymentProvider>(context, listen: false).fetchReturnProductValidData(widget.liternary_Id);
-                      },
+                        await fetchDbProductData(showOrderReturnProductValidData.showOrderProductValidData):
+                        await fetchDbProductData(showOrderReturnProductValidData.showReturnProductValidData);
+                        productSheet.openDraggableSheet(
+                          widget.orderOrReturn,
+                          context,
+                          list,
+                          widget.orderOrReturn == "Order" ? showOrderReturnProductValidData.showOrderProductValidData[index] : showOrderReturnProductValidData.showReturnProductValidData[index],
+                          widget.liternary_Id,
+                              () async{
+                            widget.orderOrReturn == "Order" ?
+                            await Provider.of<OrderReturnPaymentProvider>(context, listen: false).fetchOrderProductValidData(widget.liternary_Id,context,false):
+                            await Provider.of<OrderReturnPaymentProvider>(context, listen: false).fetchReturnProductValidData(widget.liternary_Id);
+                          },
+                        );
+                      }, onLongPress: () {
+                        print("weee.${showOrderReturnProductValidData.showReturnProductValidData[index]}");
+                        int productId =  showOrderReturnProductValidData.showReturnProductValidData[index]["id"];
+                        if(widget.orderOrReturn == "Order") return;
+                        showReturnRemarkDialog(context,index,showOrderReturnProductValidData,productId,widget.liternary_Id).then((value)async{
+                          await Provider.of<OrderReturnPaymentProvider>(context, listen: false).fetchReturnProductValidData(widget.liternary_Id);
+                        });
+                    },
                     );
                   },
-                );
-              },
-            ),
-          ),
+                ),
+              );
+            }
+          ) ,
           SizedBox(height: 5,),
           Expanded(
             flex: 2,
@@ -291,6 +304,7 @@ class _OrdersReturnTabBarDetailsState extends State<OrdersReturnTabBarDetails> {
       final List<ProductMasterData> localData = await localDb.getAllProductMaster();
 
       for (final item in localData) {
+        print("25555....$item");
         final matchedUsage = validQtyWithList.cast<Map<String, dynamic>?>().firstWhere(
               (usage) => usage?["id"] == item.id,
           orElse: () => null,
@@ -298,7 +312,8 @@ class _OrdersReturnTabBarDetailsState extends State<OrdersReturnTabBarDetails> {
 
         convertProductDbData.add({
           'adQty': matchedUsage != null ? matchedUsage["adQty"] : 0,
-          'id': item.id,
+          'id': item.id,                                // some point to continue here, because invoices and free issue, (id && productId)
+          'productId':item.productId,
           'imager': item.imageUrl,
           'displayName': item.displayName,
           'salePrice': item.salesPrice,
@@ -312,6 +327,42 @@ class _OrdersReturnTabBarDetailsState extends State<OrdersReturnTabBarDetails> {
     }
   }
 
+  outstandingStateError(OrderReturnPaymentProvider showOrderReturnProductValidData){
+    return Expanded(
+      flex: 20,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.warning, size: 40, color: Colors.orangeAccent),
+              const SizedBox(height: 16),
+              Text(
+                "Warning",
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                showOrderReturnProductValidData.outStandingState,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black54,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
   checkAndAddFreeIssueData(OrderReturnPaymentProvider showOrderReturnProductValidData) async {
     List<Map<String, dynamic>> loyaltyFreeIssueData = [];
     final data = await AppDatabase.instance.getAllLoyaltyFreeIssueData();
@@ -324,7 +375,6 @@ class _OrdersReturnTabBarDetailsState extends State<OrdersReturnTabBarDetails> {
     }).toList();
 
     for (var item1 in showOrderReturnProductValidData.showOrderProductValidData) {
-      print("mkol....$item1");
       for (var item2 in loyaltyFreeIssueData) {
         if (item1["productId"] == item2["productId"]) {
           if (!item1["is_reward"] && item2["minimumQty"] <= item1["adQty"]){

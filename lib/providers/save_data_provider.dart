@@ -26,13 +26,10 @@ class SaveDataProvider with ChangeNotifier {
 
       // Order Data
       final List<JoinedProductUsage> allOrderProductUsageList = await dataBase.getAllDetailedOrderProductUsage();
-      print("length.w..$allOrderProductUsageList");
       final List<OrderProductUsageData> allOrderProductUsageDiscountList = await dataBase.getAllOrderProductUsage();
-      print("length.f..$allOrderProductUsageDiscountList");
       int successOrderCount = 0;
       for (JoinedProductUsage usage in allOrderProductUsageList) {
         if (!usage.isSynced) {
-          print("aaa");
           try {
             final String method = usage.odooId == 0 ? 'create' : 'write';
             final List<dynamic> requiredDataSet = usage.odooId == 0
@@ -144,54 +141,62 @@ class SaveDataProvider with ChangeNotifier {
         }
       }
       // Return Data
-      final List<
-          JoinedReturnProductUsage> allReturnProductUsageList = await dataBase
-          .getAllDetailedReturnProductUsage();
+      // Return Data
+      final List<JoinedReturnProductUsage> allReturnProductUsageList = await dataBase.getAllDetailedReturnProductUsage();
       int successReturnCount = 0;
       for (JoinedReturnProductUsage usage in allReturnProductUsageList) {
-        if (!usage.isSynced) {
-          try {
-            final String method = usage.odooId == 0 ? 'create' : 'write';
-            final List<dynamic> requiredDataSet = usage.odooId == 0
-                ? [
-              {
-                "return_line_id": usage.itineraryLineId,
-                "product_id": usage.product.productId,
-                "quantity": usage.returnQty,
-                "total": usage.product.salesPrice * usage.returnQty,
+          if (!usage.isSynced) {
+            print("return reason ....${usage.return_reason_id}");
+            print("return reason ....${usage.return_action_id}");
+            print("return reason ....${usage.return_reason}");
+            try {
+              final String method = usage.odooId == 0 ? 'create' : 'write';
+              final List<dynamic> requiredDataSet = usage.odooId == 0
+                  ? [
+                {
+                  "return_line_id": usage.itineraryLineId,
+                  "product_id": usage.product.productId,
+                  "quantity": usage.returnQty,
+                  "total":  usage.product.salesPrice * usage.returnQty,
+                  "return_action_id":usage.return_action_id,
+                  "return_reason_id":usage.return_reason_id,
+                  "return_reason":usage.return_reason,
+                }
+              ]
+                  : [
+                [usage.odooId],
+                {
+                  "return_line_id": usage.itineraryLineId,
+                  "product_id": usage.product.productId,
+                  "quantity": usage.returnQty,
+                  "total":  usage.product.salesPrice * usage.returnQty,
+                  "return_action_id":usage.return_action_id,
+                  "return_reason_id":usage.return_reason_id,
+                  "return_reason":usage.return_reason,
+                }
+              ];
+              final resultId = await xml_rpc.call(
+                Uri.parse("$baseUrl/xmlrpc/2/object"),
+                'execute_kw',
+                [
+                  dbName,
+                  userId,
+                  password,
+                  'itinerary.return.line',
+                  method,
+                  requiredDataSet
+                ],
+              );
+              if (resultId != null && resultId != false) {
+                successReturnCount++;
+                hasAnySyncedData = true;
+                await dataBase.updateIsSyncedTrueAndOdooIdReturnProductUsage(
+                    id: usage.id, odooId: resultId);
               }
-            ]
-                : [
-              [usage.odooId],
-              {
-                "return_line_id": usage.itineraryLineId,
-                "product_id": usage.product.productId,
-                "quantity": usage.returnQty,
-                "total": usage.product.salesPrice * usage.returnQty,
-              }
-            ];
-            final resultId = await xml_rpc.call(
-              Uri.parse("$baseUrl/xmlrpc/2/object"),
-              'execute_kw',
-              [
-                dbName,
-                userId,
-                password,
-                'itinerary.return.line',
-                method,
-                requiredDataSet
-              ],
-            );
-            if (resultId != null && resultId != false) {
-              successReturnCount++;
-              hasAnySyncedData = true;
-              await dataBase.updateIsSyncedTrueAndOdooIdReturnProductUsage(
-                  id: usage.id, odooId: resultId);
+            } catch (e) {
+              print("Error syncing returnsss: $e");
             }
-          } catch (e) {
-            print("Error syncing returnsss: $e");
           }
-        }
       }
       // Payment Data
       final List<PaymentUsageData> allPaymentUsageList = await dataBase

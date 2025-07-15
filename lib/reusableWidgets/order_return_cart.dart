@@ -12,6 +12,7 @@ class OrderReturnCart extends StatelessWidget {
   final int index;
   final int liternary_Id;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   const OrderReturnCart({
     super.key,
@@ -20,15 +21,16 @@ class OrderReturnCart extends StatelessWidget {
     required this.index,
     required this.liternary_Id,
     required this.onTap,
+    required this.onLongPress,
   });
   @override
   Widget build(BuildContext context) {
-    print("cbbnn........${orderReturnValidData}");
     final orderReturnProviderData = Provider.of<OrderReturnPaymentProvider>(context);
     final dataBase = AppDatabase.instance;
     final numberFormatter = NumberFormat('#,##0.00');
     return GestureDetector(
       onTap:onTap,
+      onLongPress: onLongPress,
       child: Dismissible(
          direction: orderOrReturn == "Order" && (orderReturnValidData[index]["isFreeProduct"] || orderReturnValidData[index]["is_discount_product"]) ?  DismissDirection.none :DismissDirection.endToStart ,
         key: UniqueKey(),
@@ -48,10 +50,18 @@ class OrderReturnCart extends StatelessWidget {
               await AppDatabase.instance.deleteDiscountOrderProductUsage(liternary_Id);
               orderReturnProviderData.fetchOrderProductValidData(liternary_Id,context,false);
             }else{
-              bool deleted  = await dataBase.deleteReturnProductUsageByLineAndProduct(
-                itineraryLineId: liternary_Id,
-                productId: orderReturnValidData[index]["id"],
-              );
+              bool deleted =false;
+              print("4777...${orderReturnValidData[index]}");
+              if(orderReturnValidData[index]["isAddedInvoicesReturn"]){
+                deleted  = await dataBase.deleteInvoiceReturnProductUsageByProductAndItinerary(
+                    itineraryLineId: liternary_Id,
+                    returnInvoiceDeleteId: orderReturnValidData[index]["productId"]);
+              }else{
+                deleted  = await dataBase.deleteReturnProductUsageByLineAndProduct(
+                  itineraryLineId: liternary_Id,
+                  productId: orderReturnValidData[index]["id"],
+                );
+              }
               if (deleted) {
                 print("Delete successful.");
               } else {
@@ -130,6 +140,13 @@ class OrderReturnCart extends StatelessWidget {
                               ),
                             ),
                           ],
+                        ),
+                        Text(
+                          "Type :  ${orderReturnValidData[index]["return_reason_name"]??""} | Action :  ${orderReturnValidData[index]["return_action_name"]?? ""}",
+                          style: TextStyle(
+                            color: kCartColor,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),

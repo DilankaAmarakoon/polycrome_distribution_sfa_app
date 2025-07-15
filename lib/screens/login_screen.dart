@@ -100,9 +100,8 @@ class _LoginScreenState extends State<LoginScreen> {
           isLoginSuccess = false;
 
           int userIds = await checkUserLogin(
-            "Jayaseelan", "123"
-            // loginData.name,
-            // loginData.password,
+            loginData.name,
+            loginData.password,
           );
           debugPrint("User IDff: $userIds");
           if (userIds > 0) {

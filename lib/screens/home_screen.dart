@@ -71,8 +71,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: () async {
                             // deleteLocalDatabase();
                             if(itineraryData.isVisibleCheckIn){
-                              await itineraryData.fetchDbItineraryDate();
-                              await itineraryData.fetchVisitStatusData();
                               final isAllVisited = await checkIsVisitedDoneForAllLines(itineraryData);
                               if (!isAllVisited) {
                                 await showConfirmationDialog(
@@ -130,8 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           isDisabled: !itineraryData.isVisibleCheckIn,
                           lable: "Visit Details",
                           onTap: () async {
-                            itineraryData.fetchDbItineraryDate();
-                            itineraryData.fetchVisitStatusData();
+                            await itineraryData.fetchDbItineraryDate();
+                            await itineraryData.fetchVisitStatusData();
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -153,6 +151,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.power_settings_new_outlined,
                           lable: "Log Out",
                           onTap: () async {
+                            if(itineraryData.isVisibleCheckIn){
+                              await showConfirmationDialog(
+                                context,
+                                "Before logging out, please make sure you have completed the checkout process.",
+                                actionType: 'Ok',
+                              );
+                              return;
+                            }
                             final confirmed = await showConfirmationDialog(
                               context,
                               "Are you sure you want to log out?",
@@ -181,12 +187,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
   Future<void> _downloadData(bool isCheckInOut,GetLiveLocation getLiveLocation) async {
+    print("eerr");
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const SyncDialog(message: "Downloading data from the server...", syncType: "download"),
     );
-    if(isCheckInOut){
+    print("4445555.$isCheckInOut");
       final handler = Provider.of<ItineraryDataHandle>(context, listen: false);
       final position =  await getLiveLocation.getCurrentLocation();
       if(position == null){
@@ -197,12 +204,12 @@ class _HomeScreenState extends State<HomeScreen> {
         );
         return;
       }else{
+        print("sss");
         await handler.itineraryData();
         await handler.productData();
         await handler.productLoyaltyProgramAndDiscounts();
         handler.saveCheckInOutDetails("checkIn",position.latitude,position.longitude);
       }
-    }
     if (!mounted) return;
     Navigator.pop(context);
   }
@@ -284,5 +291,4 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return true;
   }
-
 }

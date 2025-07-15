@@ -63,8 +63,27 @@ class ReturnProductUsage extends Table {
   IntColumn get odooId => integer().withDefault(const Constant(0))();
   IntColumn get itineraryLineId => integer()();
   IntColumn get productId => integer()();
+  TextColumn get return_reason => text().withDefault(const Constant(""))();
+  TextColumn get return_invoices_display_name => text().withDefault(const Constant(""))();
+  RealColumn get invoiceSalesPrice => real().withDefault(const Constant(0.0))();
   IntColumn get returnQty => integer().withDefault(const Constant(0))();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
+  IntColumn get return_reason_id => integer().withDefault(const Constant(0))();
+  IntColumn get return_action_id => integer().withDefault(const Constant(0))();
+  BoolColumn get isAddedInvoicesReturn => boolean().withDefault(const Constant(false))();
+
+}
+
+@DataClassName('ReturnInvoicesData')
+class ReturnInvoices extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get move_id => integer()();
+  IntColumn get account_move_line_id => integer()();
+  IntColumn get productId => integer()();
+  TextColumn get productDisplayName => text()();
+  TextColumn get return_reason => text()();
+  IntColumn get returnQty => integer()();
+  RealColumn get unitPrice => real()();
 
 }
 
@@ -121,6 +140,7 @@ class InvoicesDataLines extends Table {
   TextColumn get invoice_due_date => text()();
   TextColumn get invoice_date => text()();
   TextColumn get payment_status => text()();
+  RealColumn get amount_residual => real()();
   TextColumn get move_type => text()();
   TextColumn get state => text()();
   RealColumn get invoice_amount => real()();
@@ -171,6 +191,20 @@ class ResPartnerDataOperations extends Table {
   IntColumn get credit_period => integer()();
 }
 
+@DataClassName('ReturnTypeData')
+class ReturnTypeDataOperations extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get return_type_id => integer()();
+  TextColumn get return_type_name => text()();
+}
+
+@DataClassName('ReturnActionData')
+class ReturnActionDataOperations extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get return_action_id => integer()();
+  TextColumn get return_action_name => text()();
+}
+
 class JoinedProductUsage {
   final int id;
   final int odooId;
@@ -211,14 +245,20 @@ class JoinedProductUsage {
     return 'Product: \${product.productName}, Code: \${product.itemCode}, Price: \${product.salesPrice}, Qty: \$adQty, product_Id: \${product.productId} isSynced: \${product.isSynced}';
   }
 }
-
 class JoinedReturnProductUsage {
   final int id;
   final int odooId;
   final ProductMasterData product;
+  final int productId;
   final int returnQty;
   final int itineraryLineId;
   final bool isSynced;
+  final String return_reason;
+  final int return_reason_id;
+  final int return_action_id;
+  final String return_invoices_display_name ;
+  final double invoiceSalesPrice;
+  final bool isAddedInvoicesReturn ;
 
 
 
@@ -227,8 +267,17 @@ class JoinedReturnProductUsage {
     required this.odooId,
     required this.product,
     required this.returnQty,
+    required this.productId,
     required this.itineraryLineId,
-    required this.isSynced});
+    required this.isSynced,
+    required this.return_reason,
+    required this.return_reason_id,
+    required this.return_action_id,
+    required this.return_invoices_display_name,
+    required this.invoiceSalesPrice,
+    required this.isAddedInvoicesReturn,
+
+  });
 
   @override
   String toString() {
@@ -242,6 +291,7 @@ class JoinedReturnProductUsage {
   ProductMaster,
   OrderProductUsage,
   ReturnProductUsage,
+  ReturnInvoices,
   ProductCategory,
   ItineraryPaymentLines,
   InvoicesDataLines,
@@ -249,7 +299,9 @@ class JoinedReturnProductUsage {
   VisitStatusDataLines,
   LoyaltyFreeIssueDataLines,
   DiscountDataOperations,
-  ResPartnerDataOperations
+  ResPartnerDataOperations,
+  ReturnTypeDataOperations,
+  ReturnActionDataOperations
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase._() : super(_openConnection());
@@ -438,6 +490,57 @@ class AppDatabase extends _$AppDatabase {
     return null;
   }
 
+  Future<void> updateReturnRemarkFieldsByItineraryAndProduct({
+    required int itineraryLineId,
+    required int productId,
+    String return_reason = "" ,
+  }) async {
+
+    final count = await (update(returnProductUsage)
+      ..where((tbl) =>
+      tbl.itineraryLineId.equals(itineraryLineId) &
+      tbl.productId.equals(productId)))
+        .write( ReturnProductUsageCompanion(
+      return_reason: Value(return_reason),
+    ),);
+
+    print("✅ Updated $count row(s) in returnProductUsage");
+  }
+  Future<void> updateReturnReasonIdAndActionFieldsByItineraryAndProduct({
+    required int itineraryLineId,
+    required int productId,
+    int return_reason_id = 0,
+  }) async {
+
+    final count = await (update(returnProductUsage)
+      ..where((tbl) =>
+      tbl.itineraryLineId.equals(itineraryLineId) &
+      tbl.productId.equals(productId)))
+        .write( ReturnProductUsageCompanion(
+      return_reason_id: Value(return_reason_id),
+    ),);
+
+    print("✅ Updated $count row(s) in returnProductUsage");
+  }
+
+  Future<void> updateReturnActionIdAndActionFieldsByItineraryAndProduct({
+    required int itineraryLineId,
+    required int productId,
+    int return_action_id =0,
+  }) async {
+
+    final count = await (update(returnProductUsage)
+      ..where((tbl) =>
+      tbl.itineraryLineId.equals(itineraryLineId) &
+      tbl.productId.equals(productId)))
+        .write( ReturnProductUsageCompanion(
+      return_action_id: Value(return_action_id),
+    ),);
+
+    print("✅ Updated $count row(s) in returnProductUsage");
+  }
+
+
   Future<int> insertOrderProductUsage({
     required int itineraryLineId,
     required int productId,
@@ -447,7 +550,6 @@ class AppDatabase extends _$AppDatabase {
     double discountProductPrice = 0.0,
     double discountPercentage = 0.0,
   }) {
-    print("ggghh.$isDiscountProduct");
     return into(orderProductUsage).insert(
       OrderProductUsageCompanion(
         itineraryLineId: Value(itineraryLineId),
@@ -460,6 +562,33 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
   }
+
+  // Future<int> insertReturnProductUsage({
+  //   required int itineraryLineId,
+  //   required int productId,
+  //   required returnQty,
+  //   String return_invoices_display_name = "",
+  //   int odooId = 0,
+  //   bool isSynced = false,
+  //   String return_reason = "",
+  //   double invoiceSalesPrice = 0.0,
+  //   bool isAddedInvoicesReturn = false,
+  // }) {
+  //   return into(returnProductUsage).insert(
+  //     ReturnProductUsageCompanion(
+  //       itineraryLineId: Value(itineraryLineId),
+  //       productId: Value(productId),
+  //       returnQty: Value(returnQty),
+  //       return_invoices_display_name: Value(return_invoices_display_name),
+  //       odooId: Value(odooId),
+  //       isSynced: Value(isSynced),
+  //       return_reason: Value(return_reason),
+  //       invoiceSalesPrice: Value(invoiceSalesPrice),
+  //       isAddedInvoicesReturn: Value(isAddedInvoicesReturn),
+  //     ),
+  //   );
+  // }
+
 
   Future<int>  addFreeIssueOrderProductUsage({
     required int itineraryLineId,
@@ -497,6 +626,14 @@ class AppDatabase extends _$AppDatabase {
   }
 
 
+
+  Future<int?> getProductMasterTableId(int productId) async {
+    final product = await (select(productMaster)
+      ..where((tbl) => tbl.productId.equals(productId)))
+        .getSingleOrNull();
+
+    return product?.id;
+  }
  Future<int?> updateFreeIssueOrderProductUsage({
     required int itineraryLineId,
     required int productId,
@@ -607,8 +744,6 @@ class AppDatabase extends _$AppDatabase {
     return results.map((row) {
       final product = row.readTable(productMaster);
       final usage = row.readTable(orderProductUsage);
-      print("ProductMaster Row ID (local auto-increment id): ${product.productId}");
-      print("ProductMaster.productId (Odoo ID): ${usage.productId}");
       return JoinedProductUsage(
           product: product,
           adQty: usage.adQty ,
@@ -678,10 +813,49 @@ class AppDatabase extends _$AppDatabase {
       return JoinedReturnProductUsage(
         product: product,
         returnQty: usage.returnQty,
+        productId: usage.productId,
         itineraryLineId: usage.itineraryLineId,
         id: usage.id,
         isSynced: usage.isSynced,
         odooId: usage.odooId,
+        return_reason: usage.return_reason,
+        return_reason_id: usage.return_reason_id,
+        return_action_id: usage.return_action_id,
+        return_invoices_display_name: usage.return_invoices_display_name,
+        invoiceSalesPrice: usage.invoiceSalesPrice,
+        isAddedInvoicesReturn: usage.isAddedInvoicesReturn,
+
+      );
+    }).toList();
+  }
+  Future<List<JoinedReturnProductUsage>> getDetailedInvoiceReturnProductUsage(int itineraryLineId) async {
+    final query = select(productMaster).join([
+      innerJoin(
+        returnProductUsage,
+        returnProductUsage.productId.equalsExp(productMaster.productId) &
+        returnProductUsage.itineraryLineId.equals(itineraryLineId),
+      )
+    ]);
+
+    final results = await query.get();
+
+    return results.map((row) {
+      final product = row.readTable(productMaster);
+      final usage = row.readTable(returnProductUsage);
+      return JoinedReturnProductUsage(
+        product: product,
+        returnQty: usage.returnQty,
+        productId: usage.productId,
+        itineraryLineId: usage.itineraryLineId,
+        id: usage.id,
+        isSynced: usage.isSynced,
+        odooId: usage.odooId,
+        return_reason: usage.return_reason,
+        return_reason_id: usage.return_reason_id,
+        return_action_id: usage.return_action_id,
+        return_invoices_display_name: usage.return_invoices_display_name,
+        invoiceSalesPrice: usage.invoiceSalesPrice,
+        isAddedInvoicesReturn: usage.isAddedInvoicesReturn,
       );
     }).toList();
   }
@@ -702,10 +876,47 @@ class AppDatabase extends _$AppDatabase {
       return JoinedReturnProductUsage(
         product: product,
         returnQty: usage.returnQty,
+        productId: usage.productId,
         itineraryLineId: usage.itineraryLineId,
         id: usage.id,
         isSynced: usage.isSynced,
         odooId: usage.odooId,
+        return_reason:usage.return_reason,
+        return_reason_id:usage.return_reason_id,
+        return_action_id:usage.return_action_id,
+        return_invoices_display_name: usage.return_invoices_display_name,
+        invoiceSalesPrice: usage.invoiceSalesPrice,
+        isAddedInvoicesReturn: usage.isAddedInvoicesReturn,
+      );
+    }).toList();
+  }
+  Future<List<JoinedReturnProductUsage>> getAllDetailedInvoiceReturnProductUsage() async {
+    final query = select(productMaster).join([
+      innerJoin(
+        returnProductUsage,
+        returnProductUsage.productId.equalsExp(productMaster.productId),
+      )
+    ]);
+
+    final results = await query.get();
+
+    return results.map((row) {
+      final product = row.readTable(productMaster);
+      final usage = row.readTable(returnProductUsage);
+      return JoinedReturnProductUsage(
+        product: product,
+        returnQty: usage.returnQty,
+        productId: usage.productId,
+        itineraryLineId: usage.itineraryLineId,
+        id: usage.id,
+        isSynced: usage.isSynced,
+        odooId: usage.odooId,
+        return_reason:usage.return_reason,
+        return_reason_id:usage.return_reason_id,
+        return_action_id:usage.return_action_id,
+        return_invoices_display_name: usage.return_invoices_display_name,
+        invoiceSalesPrice: usage.invoiceSalesPrice,
+        isAddedInvoicesReturn: usage.isAddedInvoicesReturn,
       );
     }).toList();
   }
@@ -719,7 +930,8 @@ class AppDatabase extends _$AppDatabase {
     required int itineraryLineId,
     required int productId,
     required int returnQty,
-  }) async {
+  }) async
+  {
     final existing = await (select(returnProductUsage)
       ..where((tbl) =>
       tbl.itineraryLineId.equals(itineraryLineId) &
@@ -744,6 +956,54 @@ class AppDatabase extends _$AppDatabase {
     }
     return null;
   }
+  Future<int?> addOrUpdateOrRemoveReturnProductUsageForInvoiceItems({
+    required int itineraryLineId,
+    required int productId,
+    required int returnQty,
+    double invoiceSalesPrice = 0.0,
+    String return_invoices_display_name = "",
+    String return_reason = "",
+  }) async
+  {
+    // await deleteInvoiceReturnProductUsageByProductAndItinerary(itineraryLineId: itineraryLineId, returnInvoiceDeleteId:returnInvoiceDeleteId);
+    final existing = await (select(returnProductUsage)
+      ..where((tbl) =>
+      tbl.itineraryLineId.equals(itineraryLineId) &
+      tbl.productId.equals(productId)
+      )).getSingleOrNull();
+
+    if (existing == null && returnQty > 0) {
+      final insertedId = await into(returnProductUsage).insert(
+        ReturnProductUsageCompanion(
+          itineraryLineId: Value(itineraryLineId),
+          productId: Value(productId),
+          returnQty: Value(returnQty),
+          isAddedInvoicesReturn: const Value(true),
+          invoiceSalesPrice: Value(invoiceSalesPrice),
+          return_invoices_display_name: Value(return_invoices_display_name),
+          return_reason: Value(return_reason),
+        ),
+      );
+      return insertedId;
+    } else if (existing != null && returnQty > 0) {
+      await (update(returnProductUsage)
+        ..where((tbl) => tbl.id.equals(existing.id)))
+          .write(ReturnProductUsageCompanion(
+        returnQty: Value(returnQty),
+        invoiceSalesPrice: Value(invoiceSalesPrice),
+        return_invoices_display_name: Value(return_invoices_display_name),
+        return_reason: Value(return_reason),
+      ));
+      return existing.id;
+    } else if (existing != null && returnQty == 0) {
+      await (delete(returnProductUsage)
+        ..where((tbl) => tbl.id.equals(existing.id))).go();
+      return null;
+    }
+
+    return null;
+  }
+
 
   Future<bool> deleteReturnProductUsageByLineAndProduct({
     required int itineraryLineId,
@@ -759,8 +1019,14 @@ class AppDatabase extends _$AppDatabase {
   }
 
 
-  Future<List<ReturnProductUsageData>> getReturnProductUsageForItinerary(int itineraryLineId) {
-    return (select(returnProductUsage)..where((tbl) => tbl.itineraryLineId.equals(itineraryLineId))).get();
+  Future<List<ReturnProductUsageData>> getInvoiceReturnProductUsageForItinerary(int itineraryLineId) {
+    return (select(returnProductUsage)..where((tbl) =>
+        tbl.itineraryLineId.equals(itineraryLineId)  &
+        tbl.isAddedInvoicesReturn.equals(true))).get();
+  }
+
+  Future<int> deleteReturnProductUsageByItinerary(int itineraryLineId) {
+    return (delete(returnProductUsage)..where((tbl) => tbl.itineraryLineId.equals(itineraryLineId))).go();
   }
 
   Future<void> clearReturnProductUsage() => delete(returnProductUsage).go();
@@ -912,6 +1178,94 @@ class AppDatabase extends _$AppDatabase {
   Future<List<PaymentUsageData>> getAllPaymentUsageLinesPaymentLineId(int paymentLineId) {
     return (select(paymentUsage)..where((tbl) => tbl.payment_line_id.equals(paymentLineId))).get();
   }
+  //
+  Future<int> insertReturnInvoiceData({
+    required int move_id,
+    required int accountMoveLineId,
+    required int productId,
+    required String productDisplayName,
+    required String return_reason,
+    required int returnQty,
+    required double unitPrice,
+  }) {
+    return into(returnInvoices).insert(
+      ReturnInvoicesCompanion(
+        move_id: Value(move_id),
+        account_move_line_id: Value(accountMoveLineId),
+        productId: Value(productId),
+        productDisplayName: Value(productDisplayName),
+        return_reason: Value(return_reason),
+        returnQty: Value(returnQty),
+        unitPrice: Value(unitPrice),
+      ),
+    );
+  }
+
+  Future<int?> insertReturnProductUsage({
+    required int itineraryLineId,
+    String return_invoices_display_name = "",
+    double invoiceSalesPrice = 0.0,
+    required int productId,
+    String return_reason = "",
+    required int returnQty,
+    bool isAddedInvoicesReturn = false,
+  }) async {
+    // Validate returnQty
+    if (returnQty <= 0) {
+      print("⚠️ Return quantity must be greater than 0.");
+      return null;
+    }
+
+    // Join ProductMaster to get more product info
+
+    final product = await (select(productMaster)
+      ..where((tbl) => tbl.productId.equals(productId)))
+        .getSingleOrNull();
+
+    if (product == null) {
+      print("❌ ProductMaster not found for productId: $productId");
+      return null;
+    }
+
+    // Insert new record into ReturnProductUsage
+    final insertedId = await into(returnProductUsage).insert(
+        ReturnProductUsageCompanion(
+          itineraryLineId: Value(itineraryLineId),
+          return_invoices_display_name: Value(return_invoices_display_name),
+          invoiceSalesPrice: Value(invoiceSalesPrice),
+          productId: Value(productId),
+          return_reason: Value(return_reason),
+          returnQty: Value(returnQty),
+          isAddedInvoicesReturn: Value(isAddedInvoicesReturn),
+        ));
+
+    print("✅ Inserted ReturnProductUsage: ID = $insertedId, productId = $productId");
+    return insertedId;
+  }
+  Future<bool> deleteInvoiceReturnProductUsageByProductAndItinerary({
+    required int itineraryLineId,
+    required int returnInvoiceDeleteId,
+  }) async {
+    final deletedCount = await (delete(returnProductUsage)
+      ..where((tbl) =>
+      tbl.itineraryLineId.equals(itineraryLineId) &
+      tbl.productId.equals(returnInvoiceDeleteId) &
+      tbl.isAddedInvoicesReturn.equals(true)))
+        .go();
+
+    print("🗑️ Deleted $deletedCount returnProductUsage record(s) for productId: $returnInvoiceDeleteId, itineraryLineId: $itineraryLineId");
+
+    return deletedCount > 0;
+  }
+
+
+
+
+  Future<void> clearAllReturnInvoiceDataLines() => delete(returnInvoices).go();
+  Future<List<ReturnInvoicesData>> getAllReturnInvoiceDataLines() => select(returnInvoices).get();
+  Future<List<ReturnInvoicesData>> getReturnInvoicesByMoveId(int moveId) {
+    return (select(returnInvoices)..where((tbl) => tbl.move_id.equals(moveId))).get();
+  }
 
 
   Future<int> insertInvoiceData({
@@ -921,6 +1275,7 @@ class AppDatabase extends _$AppDatabase {
     required String invoiceDueDate,
     required String invoiceDate,
     required String paymentStatus,
+    required double amount_residual,
     required String moveType,
     required String state,
     required double invoice_amount,
@@ -933,6 +1288,7 @@ class AppDatabase extends _$AppDatabase {
         invoice_due_date: Value(invoiceDueDate),
         invoice_date: Value(invoiceDate),
         payment_status: Value(paymentStatus),
+        amount_residual: Value(amount_residual),
         move_type: Value(moveType),
         state: Value(state),
         invoice_amount: Value(invoice_amount),
@@ -995,6 +1351,55 @@ class AppDatabase extends _$AppDatabase {
   Future<void> clearAllCategories() => delete(productCategory).go();
 
   Future<void> closeDb() async => close();
+
+  Future<int> insertReturnTypeData({
+    required int returnTypeId,
+    required String returnTypeName,
+  }) {
+    return into(returnTypeDataOperations).insert(
+      ReturnTypeDataOperationsCompanion(
+        return_type_id: Value(returnTypeId),
+        return_type_name: Value(returnTypeName),
+      ),
+    );
+  }
+
+  // ReturnTypeData by return_type_id
+  Future<String?> getReturnTypeNameById(int id) async {
+    final result = await (select(returnTypeDataOperations)
+      ..where((tbl) => tbl.return_type_id.equals(id)))
+        .getSingleOrNull();
+
+    return result?.return_type_name;
+  }
+
+// ReturnActionData by return_action_id
+
+  Future<String?> getReturnActionNameById(int id) async {
+    return (await (select(returnActionDataOperations)
+      ..where((tbl) => tbl.return_action_id.equals(id)))
+        .getSingleOrNull())
+        ?.return_action_name;
+  }
+
+  Future<List<ReturnTypeData>> getAllReturnTypeData() => select(returnTypeDataOperations).get();
+  Future<void> clearAllReturnTypeData() => delete(returnTypeDataOperations).go();
+
+  Future<int> insertReturnActionData({
+    required int returnActionId,
+    required String returnActionName,
+  }) {
+    return into(returnActionDataOperations).insert(
+      ReturnActionDataOperationsCompanion(
+        return_action_id: Value(returnActionId),
+        return_action_name: Value(returnActionName),
+      ),
+    );
+  }
+
+  Future<List<ReturnActionData>> getAllReturnActionData() => select(returnActionDataOperations).get();
+  Future<void> clearAllReturnActionData() => delete(returnActionDataOperations).go();
+
 
   Future<int> insertLoyaltyFreeIssueData({
     required int productId,

@@ -89,6 +89,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                           await orderReturnPaymentProvider.insertPaymentUsageData(widget.itineraryId);
                           int partnerId = Provider.of<ItineraryDataHandle>(context, listen: false).convertItineraryDbData[widget.index]["partner_id"];
                           await Provider.of<OrderReturnPaymentProvider>(context,listen: false).fetchPaymentInvoicesDropData(partnerId,);
+                          await Provider.of<OrderReturnPaymentProvider>(context,listen: false).fetchReturnTypeAndActionDropData();
                           await Navigator.push(
                             context,
                             MaterialPageRoute(

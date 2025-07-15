@@ -7,7 +7,7 @@ class NormalTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final bool isNumber;
   final bool isEnabled;
-  final bool isNoteText;
+  final int maxLine;
   final void Function(String)? onChanged;
 
   const NormalTextField({
@@ -17,7 +17,7 @@ class NormalTextField extends StatelessWidget {
     this.validator,
     this.isNumber = false,
     this.isEnabled = true,
-    this.isNoteText = false,
+    this.maxLine = 1,
     this.onChanged,
   }) : super(key: key);
 
@@ -28,7 +28,7 @@ class NormalTextField extends StatelessWidget {
       child: TextFormField(
         controller: controller,
         enabled: isEnabled,
-         maxLines: isNoteText ? 5:1,
+         maxLines: maxLine,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         inputFormatters: isNumber
             ? <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly]
@@ -51,11 +51,15 @@ class NormalTextField extends StatelessWidget {
           focusedErrorBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: Colors.red, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 30),
         ),
         validator: validator,
         onChanged: onChanged,
+        style: TextStyle(
+          color: isEnabled ? Colors.black : Colors.grey,
+          fontSize: 15,
       ),
+    ),
     );
   }
 }

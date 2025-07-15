@@ -65,7 +65,7 @@ Future<bool> showExitConfirmationDialog(
                   ),
                   selectedVisitStatus == "Other"  ? NormalTextField(
                     controller: otherStatus,
-                    isNoteText: true,
+                    maxLine: 5,
                     label: "Other Reason",
                     onChanged: (value){},
                   ) : SizedBox(),
@@ -91,8 +91,6 @@ Future<bool> showExitConfirmationDialog(
               ),
               ElevatedButton.icon(
                 onPressed: () {
-                  print("op...$selectedVisitStatus");
-                  print("op...${otherStatus.text.isNotEmpty}");
                   if (selectedId != 0 && selectedVisitStatus != "Other") {
                     AppDatabase.instance.updateVisitStatusSalesPersonData(
                       itinerary_line_id: itineraryId,

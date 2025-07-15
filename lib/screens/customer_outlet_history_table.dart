@@ -42,9 +42,11 @@ class _CustomerOutletHistoryTableState extends State<CustomerOutletHistoryTable>
 
   @override
   void initState() {
-     fetchAccountMoveData(customerInvoicesId,invoicesTypesId,fromDate.text,toDate.text);
-    dataSource = DataSource(loadedDataList: loadedDataList);
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      fetchAccountMoveData(customerInvoicesId,invoicesTypesId,fromDate.text,toDate.text);
+    });
+    dataSource = DataSource(loadedDataList: loadedDataList);
   }
   @override
   Widget build(BuildContext context) {
@@ -224,11 +226,13 @@ class _CustomerOutletHistoryTableState extends State<CustomerOutletHistoryTable>
   }
   Future<dynamic> fetchAccountMoveData(customerInvoicesId,invoicesTypesId,fromDate,toDate) async {
     try {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const SyncDialog(message: "Downloading data from the server...", syncType: "download"),
-      );
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const SyncDialog(message: "Downloading data from the server...", syncType: "download"),
+        );
+      }
       final pref = await SharedPreferences.getInstance();
       final userId = pref.getInt("user_Id");
       final password = pref.getString("password");
@@ -339,9 +343,12 @@ class _CustomerOutletHistoryTableState extends State<CustomerOutletHistoryTable>
         dataSource = DataSource(loadedDataList: loadedDataList);
         setState(() {});
       } else {
+        Navigator.pop(context);
         return [];
       }
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
     } catch (e) {
       print("Error in hhh: $e");
       return "Error: $e";

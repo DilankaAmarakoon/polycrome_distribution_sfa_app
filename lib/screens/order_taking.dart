@@ -94,6 +94,16 @@ class _OrderTakingState extends State<OrderTaking> {
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton.icon(
                   onPressed: () async{
+                    final checkReturnTypeActionOk = await checkReturnTypeAndReturnAction(orderReturnPaymentProvider);
+                    if (!checkReturnTypeActionOk) {
+                      await showConfirmationDialog(
+                        context,
+                        "Please make sure the return type and return action are selected for all return lines before proceeding",
+                        actionType: 'Ok',
+                        isDisableCancel: true,
+                      );
+                      return;
+                    }
                     await AppDatabase.instance.updateIsVisitedSalesPersonData(itinerary_line_id: widget.itineraryId,isVisited: true);
                     final bool isConnectedInternet = await connectionCheckProvider.checkConnection();
                     final position =  await getLiveLocation.getCurrentLocation();
@@ -132,7 +142,7 @@ class _OrderTakingState extends State<OrderTaking> {
                       );
                       final shouldPop = await showExitConfirmationDialog(
                         context,
-                        outletVisitStatusList,
+                          itineraryDataHandleData.outletVisitStatusList,
                         widget.convertLocalDbData[widget.index]["partner_name"],
                           widget.itineraryId
                       );
@@ -164,59 +174,59 @@ class _OrderTakingState extends State<OrderTaking> {
           body: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    constraints: BoxConstraints(minHeight: 90),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      borderRadius: BorderRadius.circular(2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.85,
+                child: Column(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          borderRadius: BorderRadius.circular(2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ],
+                        child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Table(
+                              columnWidths: const {
+                                0: IntrinsicColumnWidth(), // for label
+                                1: FixedColumnWidth(10),   // spacing before colon
+                                2: FixedColumnWidth(10),   // colon
+                                3: FlexColumnWidth(),      // for value
+                              },
+                              defaultVerticalAlignment: TableCellVerticalAlignment.top,
+                              children: [
+                                _buildTableRow("Partner", widget.convertLocalDbData[widget.index]["partner_name"]),
+                                _buildTableRow("Date", widget.convertLocalDbData[widget.index]["date"]),
+                                _buildTableRow("Route", widget.convertLocalDbData[widget.index]["route_name"]),
+                                _buildTableRow("Outstanding Rs", numberFormatter.format(widget.convertLocalDbData[widget.index]["customer_invoice_outstanding_amount"])),
+                              ],
+                            )
+                        ),
+                      ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                    Expanded(
+                      flex: 4,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Text("Partner",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                              Text('                             : ${widget.convertLocalDbData[widget.index]["partner_name"]}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text("Date",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                              Text('                                  : ${widget.convertLocalDbData[widget.index]["date"]}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text("Route",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                              Text('                                : ${widget.convertLocalDbData[widget.index]["route_name"]}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text("Outstanding Amount Rs ",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                              Text(': ${numberFormatter.format(widget.convertLocalDbData[widget.index]["customer_invoice_outstanding_amount"])}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                            ],
-                          ),
+                          Divider(),
+                          Expanded(
+                              flex:4,
+                              child: OrderTakingTabBar(liternary_Id:widget.itineraryId,partner_id:widget.convertLocalDbData[widget.index]["partner_id"])),
                         ],
                       ),
                     ),
-                  ),
-                  Divider(),
-                  OrderTakingTabBar(liternary_Id:widget.itineraryId,partner_id:widget.convertLocalDbData[widget.index]["partner_id"]),
-                ],
+                  ],
+                ),
               ),
             ),
           )
@@ -224,6 +234,33 @@ class _OrderTakingState extends State<OrderTaking> {
       ),
     );
   }
+  TableRow _buildTableRow(String label, String value) {
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+        const SizedBox(),
+        const Text(
+          ":",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            value,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            softWrap: true,
+          ),
+        ),
+      ],
+    );
+  }
+
   checkCreditLimit()async{
     final showPaymentInvoicesDropData =  Provider.of<OrderReturnPaymentProvider>(context,listen: false);
     final List<Map<String, dynamic>> invoiceList = showPaymentInvoicesDropData.showPaymentInvoicesDropData;
@@ -296,6 +333,15 @@ class _OrderTakingState extends State<OrderTaking> {
         behavior: SnackBarBehavior.fixed,
       ),
     );
+
+  }
+  checkReturnTypeAndReturnAction(OrderReturnPaymentProvider orderReturnPaymentProvider){
+    for(dynamic item in orderReturnPaymentProvider.showReturnProductValidData){
+      if (item["return_reason_id"] == 0 || item["return_action_id"] == 0) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 

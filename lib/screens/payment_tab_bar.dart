@@ -29,7 +29,7 @@ class _PaymentTabBarDetailsState extends State<PaymentTabBarDetails> {
     final showPaymentValidData = Provider.of<OrderReturnPaymentProvider>(context);
     calOrderReturnTotalAmount(showPaymentValidData);
     return Container(
-      constraints: BoxConstraints(minHeight: 100),
+      constraints: BoxConstraints(minHeight: 200),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

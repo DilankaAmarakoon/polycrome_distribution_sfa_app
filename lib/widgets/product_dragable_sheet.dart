@@ -22,7 +22,7 @@ class ProductDraggableSheet {
       ) async {
     final productDataProvider = Provider.of<ProductDataProvider>(context,listen: false);
     final orderReturnPaymentProvider = Provider.of<OrderReturnPaymentProvider>(context, listen: false);
-    await Provider.of<ProductDataProvider>(context, listen: false).fetchcatergoryData();
+    await Provider.of<ProductDataProvider>(context, listen: false).fetchCatergoryData();
     final DraggableScrollableController sheetController = DraggableScrollableController();
     final TextEditingController searchField = TextEditingController();
 

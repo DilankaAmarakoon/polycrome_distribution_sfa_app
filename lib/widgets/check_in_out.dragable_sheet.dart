@@ -74,65 +74,38 @@ class CheckInOutDraggableSheet {
                             ],
                           ),
                           const Divider(),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Container(
-                              constraints: BoxConstraints(minHeight: 90),
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).primaryColor,
-                                borderRadius: BorderRadius.circular(2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text("Current Date",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                        Text('     : ${currentDate}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Text("Visit Date",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                        Text('          : ${currentDate}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Text("Sales Person",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                        Text('    : ${resPartnerData["name"]}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Text("Distributor",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                        Text('        : ${resPartnerData["company_id"][1]}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Text("PSA ",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                        Text('                  : ${resPartnerData["route_id"]}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Text("Territory ",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                        Text('          : ${resPartnerData["territory_id"]}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-                                      ],
-                                    ),
-                                  ],
+                          Container(
+                            width: double.infinity,
+                            height: MediaQuery.of(context).size.height * 0.17,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
                                 ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Table(
+                                columnWidths: const {
+                                  0: IntrinsicColumnWidth(), // Label
+                                  1: FixedColumnWidth(10),   // Space before colon
+                                  2: FixedColumnWidth(10),   // Colon
+                                  3: FlexColumnWidth(),      // Value
+                                },
+                                defaultVerticalAlignment: TableCellVerticalAlignment.top,
+                                children: [
+                                  _buildTableRow("Current Date", currentDate),
+                                  _buildTableRow("Visit Date", currentDate),
+                                  _buildTableRow("Sales Person", resPartnerData["name"]),
+                                  _buildTableRow("Distributor", resPartnerData["company_id"][1]),
+                                  _buildTableRow("PSA", resPartnerData["route_id"].toString()),
+                                  _buildTableRow("Territory", resPartnerData["territory_id"].toString()),
+                                ],
                               ),
                             ),
                           ),
@@ -258,6 +231,16 @@ class CheckInOutDraggableSheet {
           ),
         );
       },
+    );
+  }
+  TableRow _buildTableRow(String label, String value) {
+    return TableRow(
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        const SizedBox(),
+        const Text(":", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ],
     );
   }
 

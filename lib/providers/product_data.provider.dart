@@ -15,7 +15,7 @@ class ProductDataProvider with ChangeNotifier {
   }
 
 
-  fetchcatergoryData() async {
+  fetchCatergoryData() async {
     categoryShowData = [];
     final List<ProductCategoryData> list  = await dataBase.getAllCategories();
     categoryShowData = list.map((item) => {
