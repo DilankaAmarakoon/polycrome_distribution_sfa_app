@@ -64,10 +64,10 @@ Future<bool> showReturnRemarkDialog(
                     ),
                   ),
                   Divider(),
-                  NormalTextField(
+                  ReusableTextField(
                     controller: remark,
-                    label: "Remark",
-                    maxLine: 2,
+                    labelText: "Remark",
+                    maxLines: 2,
                     onChanged: (value){
                       orderReturnProviderData.showReturnProductValidData[index]["remark"] = value;
                       setModalState((){});

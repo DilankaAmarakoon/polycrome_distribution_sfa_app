@@ -61,6 +61,7 @@ class _OrderTakingState extends State<OrderTaking> {
             context,
             "Your device's GPS (Location Services) is turned off.\n\nPlease enable it in settings to continue.",
             actionType: 'Ok',
+
           );
           return false;
         }
@@ -100,7 +101,6 @@ class _OrderTakingState extends State<OrderTaking> {
                         context,
                         "Please make sure the return type and return action are selected for all return lines before proceeding",
                         actionType: 'Ok',
-                        isDisableCancel: true,
                       );
                       return;
                     }
@@ -112,6 +112,7 @@ class _OrderTakingState extends State<OrderTaking> {
                         context,
                         "Your device's GPS (Location Services) is turned off.\n\nPlease enable it in settings to continue.",
                         actionType: 'Ok',
+
                       );
                       return;
                     }
@@ -138,7 +139,6 @@ class _OrderTakingState extends State<OrderTaking> {
                         context,
                         "Please note that there is no available connection.\n Be sure that when internet is available, sync will resume.",
                         actionType: 'Ok',
-                        isDisableCancel:true
                       );
                       final shouldPop = await showExitConfirmationDialog(
                         context,

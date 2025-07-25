@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constants/colors.dart';
+import 'constants/them.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,24 +45,20 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool isLoggedIn = false;
+
   @override
   void initState() {
     _checkUserAlreadyLoggedOrNot();
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'polycrome sales application',
-      theme:  ThemeData(
-        scaffoldBackgroundColor: kBgColor, // darker than 0xFF1E1E1E
-    colorScheme: ColorScheme.fromSeed(
-    seedColor: kMainColor,
-    ),
-        
-    ),
-      home: isLoggedIn ? HomeScreen() : LoginScreen()
+        debugShowCheckedModeBanner: false,
+        title: 'Polycrome Sales Application',
+        theme: AppTheme.lightTheme,
+        home: isLoggedIn ? HomeScreen() : LoginScreen()
     );
   }
 
@@ -75,5 +72,4 @@ class _MyAppState extends State<MyApp> {
       isLoggedIn = id != null && id > 0;
     });
   }
-
 }

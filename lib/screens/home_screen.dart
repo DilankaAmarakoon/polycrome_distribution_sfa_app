@@ -77,7 +77,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   context,
                                   "Before proceeding with checkout, please update the visit status in the itinerary line from *Pending* to *Visited*.",
                                   actionType: 'Ok',
-                                  isDisableCancel: true,
                                 );
                                 return;
                               }
@@ -100,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   context,
                                   "Please note that there is no available connection.\nBe sure that when internet is available, CheckOut will resume.",
                                   actionType: 'Ok',
+
                                 );
                               }
                             }
@@ -267,6 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
         "Please note that there is no available connection.\n Be sure that when internet is available, CheckOut will resume.",
         actionType: 'Ok',
+
       );
       Navigator.pop(context);
       return false;

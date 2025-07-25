@@ -138,11 +138,11 @@ class PaymentDraggableSheet {
                             ),
                             SizedBox(
                               height: 60,
-                              child: NormalTextField(
+                              child: ReusableTextField(
                                 controller: invoiceAmount,
-                                label: "Invoice Amount",
-                                isNumber: true,
-                                isEnabled: false,
+                                labelText: "Invoice Amount",
+                                keyboardType: TextInputType.number,
+                                readOnly: false,
                                 onChanged: (value){
                                   currentUpdateChangeMap["invoiceAmount"] = value;
                                   setModalState((){});
@@ -176,10 +176,10 @@ class PaymentDraggableSheet {
                             ),
                             SizedBox(
                               height: 60,
-                              child: NormalTextField(
+                              child: ReusableTextField(
                                 controller: chequeNumber,
-                                label: "Cheque Number",
-                                isEnabled: isChequeVisible,
+                                labelText: "Cheque Number",
+                                readOnly: !isChequeVisible,
                                 onChanged: (value){
                                   currentUpdateChangeMap["chequeNumber"] = value;
                                   setModalState((){});
@@ -200,10 +200,10 @@ class PaymentDraggableSheet {
                             ),
                             SizedBox(
                               height: 60,
-                              child: NormalTextField(
+                              child: ReusableTextField(
                                 controller: amount,
-                                label: "Amount",
-                                isNumber: true,
+                                labelText: "Amount",
+                                keyboardType: TextInputType.number,
                                 onChanged: (value){
                                   currentUpdateChangeMap["amount"] = value;
                                   setModalState((){});

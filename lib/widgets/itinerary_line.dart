@@ -73,6 +73,7 @@ class _ItineraryLinesState extends State<ItineraryLines> {
                             context,
                             "Your device's GPS (Location Services) is turned off.\n\nPlease enable it in settings to continue.",
                             actionType: 'Ok',
+
                             );
                             return;
                           }

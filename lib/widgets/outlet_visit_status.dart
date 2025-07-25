@@ -63,10 +63,10 @@ Future<bool> showExitConfirmationDialog(
                       selectedVisitStatus = value?["name"] ?? 0;
                     },
                   ),
-                  selectedVisitStatus == "Other"  ? NormalTextField(
+                  selectedVisitStatus == "Other"  ? ReusableTextField(
                     controller: otherStatus,
-                    maxLine: 5,
-                    label: "Other Reason",
+                    maxLines: 5,
+                    labelText: "Other Reason",
                     onChanged: (value){},
                   ) : SizedBox(),
                   const Spacer(),
