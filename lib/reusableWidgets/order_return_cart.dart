@@ -141,8 +141,8 @@ class OrderReturnCart extends StatelessWidget {
                             ),
                           ],
                         ),
-                        Text(
-                          "Type :  ${orderReturnValidData[index]["return_reason_name"]??""} | Action :  ${orderReturnValidData[index]["return_action_name"]?? ""}",
+                        if(orderOrReturn != "Order" && orderReturnValidData[index]["return_reason_name"] !=null) Text(
+                          "${orderReturnValidData[index]["return_reason_name"]??""} | ${orderReturnValidData[index]["return_action_name"]?? ""}",
                           style: TextStyle(
                             color: kCartColor,
                             fontSize: 12,

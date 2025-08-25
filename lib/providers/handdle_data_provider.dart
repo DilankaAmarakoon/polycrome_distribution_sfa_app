@@ -22,6 +22,7 @@ class ItineraryDataHandle with ChangeNotifier {
   List<Map<String, dynamic>> outletVisitStatusList =[];
   List distributionItineraryPartner_ids =[];
   List account_move_move_ids =[];
+  List<dynamic> resPartnerDatalist = [];
   DateTime todayDate = DateTime.now();
    // String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   String formattedDate = "2025-06-25";
@@ -77,6 +78,7 @@ class ItineraryDataHandle with ChangeNotifier {
       );
       if (resPartnerData.isEmpty) return [];
       pref.setInt("company_id", resPartnerData[0]["company_id"][0]);
+      resPartnerDatalist = resPartnerData;
       return resPartnerData;
     } catch (e) {
       print("Error in itineraryDatahhh: $e");
@@ -383,6 +385,7 @@ class ItineraryDataHandle with ChangeNotifier {
           },
         ],
       );
+      print("koll.>>$visitStatusLine");
       if (visitStatusLine.isNotEmpty) {
         final List<Future> inserts = [];
         for (final item in visitStatusLine) {

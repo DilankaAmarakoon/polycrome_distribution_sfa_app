@@ -23,9 +23,6 @@ Widget buildSearchField({
         icon: Icon(Icons.close,),
         onPressed: () {
           controller.clear();
-          if (onChanged != null) {
-            Navigator.of(context).pop();
-          }
         },
       ),
       hintText: hintText,

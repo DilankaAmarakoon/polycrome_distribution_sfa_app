@@ -303,7 +303,7 @@ class _AchievementCardState extends State<AchievementCard>
                 children: [
                   Expanded(
                     child: Text(
-                      "wewewe",
+                      discount.name,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSurface,

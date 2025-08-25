@@ -12,17 +12,19 @@ Future<bool> showReturnRemarkDialog(
     productId,
     itineraryId
     ) {
-  TextEditingController remark =TextEditingController();
+  TextEditingController remark = TextEditingController();
   remark.text = orderReturnProviderData.showReturnProductValidData[index]["remark"].toString();
   int returnReasonId = orderReturnProviderData.showReturnProductValidData[index]["return_reason_id"];
   int returnActionId = orderReturnProviderData.showReturnProductValidData[index]["return_action_id"];
+
   return showDialog<bool>(
     context: context,
     barrierDismissible: false,
+    barrierColor: Colors.black.withOpacity(0.7),
     builder: (context) => StatefulBuilder(
-      builder: (context, setModalState){
+      builder: (context, setModalState) {
         Map<String, dynamic>? getReturnTypeById() {
-          if(orderReturnProviderData.showReturnProductValidData[index]["return_reason_id"] !=0){
+          if (orderReturnProviderData.showReturnProductValidData[index]["return_reason_id"] != 0) {
             return orderReturnProviderData.showReturnTypeDropData.firstWhere(
                   (item) => item['id'] == orderReturnProviderData.showReturnProductValidData[index]["return_reason_id"],
               orElse: () => {},
@@ -30,8 +32,9 @@ Future<bool> showReturnRemarkDialog(
           }
           return null;
         }
+
         Map<String, dynamic>? getReturnActionById() {
-          if(orderReturnProviderData.showReturnProductValidData[index]["return_action_id"] !=0){
+          if (orderReturnProviderData.showReturnProductValidData[index]["return_action_id"] != 0) {
             return orderReturnProviderData.showReturnActionDropData.firstWhere(
                   (item) => item['id'] == orderReturnProviderData.showReturnProductValidData[index]["return_action_id"],
               orElse: () => {},
@@ -39,113 +42,428 @@ Future<bool> showReturnRemarkDialog(
           }
           return null;
         }
+
+        bool isFormValid() {
+          return remark.text.trim().isNotEmpty &&
+              returnReasonId != 0 &&
+              returnActionId != 0;
+        }
+
         return WillPopScope(
           onWillPop: () async => false,
-          child: AlertDialog(
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(2)),
-            ),
-            insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-            backgroundColor: Colors.white,
-            elevation: 5,
-            content: Container(
-              height: MediaQuery.of(context).size.height * 0.5,
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Return Reason",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                  Divider(),
-                  ReusableTextField(
-                    controller: remark,
-                    labelText: "Remark",
-                    maxLines: 2,
-                    onChanged: (value){
-                      orderReturnProviderData.showReturnProductValidData[index]["remark"] = value;
-                      setModalState((){});
-                    },
-                  ),
-                  ReusableDropdown(
-                    dataList: orderReturnProviderData.showReturnTypeDropData,
-                    hintText: "Return Type",
-                    selectedItem: getReturnTypeById(),
-                    onChange: (Map<String, dynamic>? value) {
-                      if(value != null){
-                        returnReasonId = value["id"];
-                      }
-                    },
-                  ),
-                  ReusableDropdown(
-                    dataList: orderReturnProviderData.showReturnActionDropData,
-                    hintText: "Return Action",
-                    selectedItem: getReturnActionById(),
-                    onChange: (Map<String, dynamic>? value) {
-                      if(value != null){
-                        returnActionId = value["id"];
-                      }
-                    },
-                  ),
-                  Spacer()
-                ],
+          child: Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.75,
+                maxWidth: 500,
               ),
-            ),
-            actionsAlignment: MainAxisAlignment.spaceBetween,
-            actions: [
-              ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context, false),
-                icon: const Icon(Icons.close, size: 18),
-                label: const Text("Cancel", style: TextStyle(fontSize: 14)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(120, 36),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header
+                      _buildHeader(context),
+
+                      // Content
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Remark Section
+                              _buildSectionTitle("Remark", Icons.comment_outlined),
+                              const SizedBox(height: 12),
+                              _buildRemarkField(
+                                  remark,
+                                  orderReturnProviderData,
+                                  index,
+                                  setModalState
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Return Type Section
+                              _buildSectionTitle("Return Type", Icons.category_outlined),
+                              const SizedBox(height: 12),
+                              _buildReturnTypeDropdown(
+                                orderReturnProviderData,
+                                getReturnTypeById(),
+                                    (value) {
+                                  if (value != null) {
+                                    returnReasonId = value["id"];
+                                    orderReturnProviderData.showReturnProductValidData[index]["return_reason_id"] = returnReasonId;
+                                    setModalState(() {});
+                                  }
+                                },
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Return Action Section
+                              _buildSectionTitle("Return Action", Icons.settings_outlined),
+                              const SizedBox(height: 12),
+                              _buildReturnActionDropdown(
+                                orderReturnProviderData,
+                                getReturnActionById(),
+                                    (value) {
+                                  if (value != null) {
+                                    returnActionId = value["id"];
+                                    orderReturnProviderData.showReturnProductValidData[index]["return_action_id"] = returnActionId;
+                                    setModalState(() {});
+                                  }
+                                },
+                              ),
+
+                              const SizedBox(height: 32),
+
+                              // Action Buttons
+                              _buildActionButtons(
+                                context,
+                                isFormValid(),
+                                remark,
+                                itineraryId,
+                                productId,
+                                returnReasonId,
+                                returnActionId,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  print("sssdddvvv.$returnReasonId");
-                    AppDatabase.instance.updateReturnRemarkFieldsByItineraryAndProduct(
-                        itineraryLineId: itineraryId,
-                        productId: productId,
-                        return_reason: remark.text,);
-                  AppDatabase.instance.updateReturnReasonIdAndActionFieldsByItineraryAndProduct(
-                    itineraryLineId: itineraryId,
-                    productId: productId,
-                    return_reason_id: returnReasonId,);
-                  AppDatabase.instance.updateReturnActionIdAndActionFieldsByItineraryAndProduct(
-                    itineraryLineId: itineraryId,
-                    productId: productId,
-                    return_action_id: returnActionId,);
-                    Navigator.pop(context);
-                },
-                icon: const Icon(Icons.done, size: 18),
-                label: const Text("Confirm", style: TextStyle(fontSize: 14)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(120, 36),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
     ),
   ).then((value) => value ?? false);
+}
+
+Widget _buildHeader(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Theme.of(context).primaryColor,
+          Theme.of(context).primaryColor.withOpacity(0.8),
+        ],
+      ),
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(20),
+        topRight: Radius.circular(20),
+      ),
+    ),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.assignment_return,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Return Reason",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Provide return information details",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.9),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildSectionTitle(String title, IconData icon) {
+  return Row(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: Colors.grey.shade600,
+        ),
+      ),
+      const SizedBox(width: 12),
+      Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade800,
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _buildRemarkField(
+    TextEditingController remark,
+    OrderReturnPaymentProvider orderReturnProviderData,
+    int index,
+    StateSetter setModalState,
+    ) {
+  return Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade300),
+      color: Colors.grey.shade50,
+    ),
+    child: ReusableTextField(
+      controller: remark,
+      labelText: "Enter your remark here...",
+      maxLines: 3,
+      onChanged: (value) {
+        orderReturnProviderData.showReturnProductValidData[index]["remark"] = value;
+        setModalState(() {});
+      },
+    ),
+  );
+}
+
+Widget _buildReturnTypeDropdown(
+    OrderReturnPaymentProvider orderReturnProviderData,
+    Map<String, dynamic>? selectedItem,
+    Function(Map<String, dynamic>?) onChanged,
+    ) {
+  return Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade300),
+      color: Colors.grey.shade50,
+    ),
+    child: ReusableDropdown(
+      dataList: orderReturnProviderData.showReturnTypeDropData,
+      hintText: "Select Return Type",
+      selectedItem: selectedItem,
+      onChange: onChanged,
+    ),
+  );
+}
+
+Widget _buildReturnActionDropdown(
+    OrderReturnPaymentProvider orderReturnProviderData,
+    Map<String, dynamic>? selectedItem,
+    Function(Map<String, dynamic>?) onChanged,
+    ) {
+  return Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade300),
+      color: Colors.grey.shade50,
+    ),
+    child: ReusableDropdown(
+      dataList: orderReturnProviderData.showReturnActionDropData,
+      hintText: "Select Return Action",
+      selectedItem: selectedItem,
+      onChange: onChanged,
+    ),
+  );
+}
+
+Widget _buildActionButtons(
+    BuildContext context,
+    bool isFormValid,
+    TextEditingController remark,
+    int itineraryId,
+    int productId,
+    int returnReasonId,
+    int returnActionId,
+    ) {
+  return Row(
+    children: [
+      Expanded(
+        child: _buildButton(
+          onPressed: () => Navigator.pop(context, false),
+          icon: Icons.close_rounded,
+          label: "Cancel",
+          isPrimary: false,
+          context: context,
+        ),
+      ),
+      const SizedBox(width: 16),
+      Expanded(
+        child: _buildButton(
+          onPressed: isFormValid
+              ? () async {
+            try {
+              print("Saving return details - ReasonId: $returnReasonId, ActionId: $returnActionId");
+
+              await AppDatabase.instance.updateReturnRemarkFieldsByItineraryAndProduct(
+                itineraryLineId: itineraryId,
+                productId: productId,
+                return_reason: remark.text,
+              );
+
+              await AppDatabase.instance.updateReturnReasonIdAndActionFieldsByItineraryAndProduct(
+                itineraryLineId: itineraryId,
+                productId: productId,
+                return_reason_id: returnReasonId,
+              );
+
+              await AppDatabase.instance.updateReturnActionIdAndActionFieldsByItineraryAndProduct(
+                itineraryLineId: itineraryId,
+                productId: productId,
+                return_action_id: returnActionId,
+              );
+
+              Navigator.pop(context, true);
+
+              // Show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.white, size: 20),
+                      SizedBox(width: 12),
+                      Text("Return details saved successfully"),
+                    ],
+                  ),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.all(16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            } catch (e) {
+              print("Error saving return details: $e");
+
+              // Show error message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.error, color: Colors.white, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text("Error: ${e.toString()}")),
+                    ],
+                  ),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.all(16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            }
+          }
+              : null,
+          icon: Icons.check_rounded,
+          label: "Confirm",
+          isPrimary: true,
+          context: context,
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _buildButton({
+  required VoidCallback? onPressed,
+  required IconData icon,
+  required String label,
+  required bool isPrimary,
+  required BuildContext context,
+}) {
+  return Container(
+    height: 50,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: onPressed != null
+          ? [
+        BoxShadow(
+          color: isPrimary
+              ? Theme.of(context).primaryColor.withOpacity(0.25)
+              : Colors.grey.withOpacity(0.15),
+          blurRadius: 8,
+          offset: const Offset(0, 4),
+        ),
+      ]
+          : null,
+    ),
+    child: ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isPrimary
+            ? Theme.of(context).primaryColor
+            : Colors.grey.shade100,
+        foregroundColor: isPrimary
+            ? Colors.white
+            : Colors.grey.shade700,
+        disabledBackgroundColor: Colors.grey.shade200,
+        disabledForegroundColor: Colors.grey.shade400,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: isPrimary
+              ? BorderSide.none
+              : BorderSide(color: Colors.grey.shade300),
+        ),
+      ),
+    ),
+  );
 }

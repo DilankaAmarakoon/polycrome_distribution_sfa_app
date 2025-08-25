@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lock_orientation_screen/lock_orientation_screen.dart';
 import 'package:polycrome_sales_application/providers/connection_handle.provider.dart';
 import 'package:polycrome_sales_application/providers/handdle_data_provider.dart';
 import 'package:polycrome_sales_application/providers/order_return_payment_provider.dart';
@@ -42,7 +43,6 @@ class MyApp extends StatefulWidget {
   @override
   State<MyApp> createState() => _MyAppState();
 }
-
 class _MyAppState extends State<MyApp> {
   bool isLoggedIn = false;
 
@@ -54,11 +54,13 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Polycrome Sales Application',
-        theme: AppTheme.lightTheme,
-        home: isLoggedIn ? HomeScreen() : LoginScreen()
+    return LockOrientation(
+      child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Polycrome Sales Application',
+          theme: AppTheme.lightTheme,
+          home: isLoggedIn ? HomeScreen() : LoginScreen()
+      ),
     );
   }
 
